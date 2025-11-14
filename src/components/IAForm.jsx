@@ -15,14 +15,13 @@ export default function IAForm() {
   const [allChats, setAllChats] = useState([]);
   const [chatId, setChatId] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const chatEndRef = useRef(null);
 
-  // Scroll automático
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Cargar todos los chats
   const loadAllChats = async () => {
     try {
       const { data } = await api.get("/chats");
@@ -33,12 +32,14 @@ export default function IAForm() {
         const chatData = await api.get(`/chats/${lastChat.id}`);
         setChatId(chatData.data.id);
         setMessages(chatData.data.messages);
-      } else if (data.length === 0) {
+      } else {
         setMessages([]);
         setChatId(null);
       }
     } catch (err) {
       console.error("Error cargando chats:", err);
+      setMessages([]);
+      setChatId(null);
     }
   };
 
@@ -56,6 +57,7 @@ export default function IAForm() {
       const { data } = await api.get(`/chats/${id}`);
       setChatId(data.id);
       setMessages(data.messages);
+      setMenuOpen(false);
     } catch (err) {
       console.error("No se pudo cargar el chat:", err);
     }
@@ -91,7 +93,10 @@ export default function IAForm() {
       if (!chatId) setChatId(data.chatId);
       loadAllChats();
     } catch (err) {
-      setMessages((prev) => [...prev, { role: "ai", content: "❌ Error procesando tu solicitud." }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", content: "❌ Error procesando tu solicitud." },
+      ]);
     } finally {
       setLoading(false);
     }
@@ -99,7 +104,10 @@ export default function IAForm() {
 
   return (
     <div className="main-container">
-      <aside className="sidebar">
+      <aside className={`sidebar ${menuOpen ? "open" : ""}`}>
+        <button className="hamburger" onClick={() => setMenuOpen(!menuOpen)}>
+          ☰
+        </button>
         <button className="new-chat-btn" onClick={createNewChat}>
           ➕ Nuevo Chat
         </button>
@@ -141,10 +149,11 @@ export default function IAForm() {
           </form>
 
           <div className="chat-footer">
-            © 2025 Ramiro Atencio — Proyecto de IA Académica.
+            © 2025 Ramiro Atencio — Proyecto IA Académica
           </div>
         </div>
       </section>
     </div>
   );
 }
+

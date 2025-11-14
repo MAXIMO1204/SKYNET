@@ -6,27 +6,28 @@ import { OpenAI } from "openai";
 dotenv.config();
 const app = express();
 
-// ⚡ Configuración de CORS: permite cualquier origen
+// ✅ CORS abierto para cualquier origen
 app.use(cors({ origin: "*" }));
 app.options("*", cors());
 
-// ⚡ Middleware JSON
+// ✅ JSON middleware
 app.use(express.json());
 
-// ⚡ Cliente OpenAI/Hugging Face
+// Cliente OpenAI/Hugging Face
 const client = new OpenAI({
   baseURL: "https://router.huggingface.co/v1",
   apiKey: process.env.HF_TOKEN || process.env.OPENAI_API_KEY,
 });
 
-// ⚡ Memoria de chats
+// Memoria de chats en RAM
 let chats = [];
 
-// ⚡ Crear o continuar chat
+// Crear o continuar chat
 app.post("/api/chat", async (req, res) => {
   try {
     const { message, chatId, title } = req.body;
-    if (!message || message.trim() === "") return res.status(400).json({ error: "Mensaje vacío" });
+    if (!message || message.trim() === "")
+      return res.status(400).json({ error: "Mensaje vacío" });
 
     const chatCompletion = await client.chat.completions.create({
       model: "deepseek-ai/DeepSeek-V3.2-Exp:novita",
@@ -37,10 +38,17 @@ app.post("/api/chat", async (req, res) => {
     const id = chatId || Date.now().toString();
     const index = chats.findIndex((c) => c.id === id);
 
-    const newMessage = [{ role: "user", content: message }, { role: "ai", content: respuesta }];
+    const newMessage = [
+      { role: "user", content: message },
+      { role: "ai", content: respuesta },
+    ];
 
     if (index === -1) {
-      chats.push({ id, title: title || `Chat ${chats.length + 1}`, messages: newMessage });
+      chats.push({
+        id,
+        title: title || `Chat ${chats.length + 1}`,
+        messages: newMessage,
+      });
     } else {
       chats[index].messages.push(...newMessage);
       if (title && !chats[index].title.includes("Chat")) chats[index].title = title;
@@ -48,24 +56,24 @@ app.post("/api/chat", async (req, res) => {
 
     res.json({ response: respuesta, chatId: id });
   } catch (err) {
-    console.error("❌ Error backend:", err.message);
+    console.error("❌ Error backend:", err);
     res.status(500).json({ error: "Error procesando la solicitud" });
   }
 });
 
-// ⚡ Listar chats
+// Listar chats
 app.get("/api/chats", (req, res) => {
   res.json(chats.map(({ id, title }) => ({ id, title })));
 });
 
-// ⚡ Obtener chat por ID
+// Obtener chat por ID
 app.get("/api/chats/:id", (req, res) => {
   const chat = chats.find((c) => c.id === req.params.id);
   if (!chat) return res.status(404).json({ error: "Chat no encontrado" });
   res.json({ id: chat.id, title: chat.title, messages: chat.messages });
 });
 
-// ⚡ Eliminar chat
+// Eliminar chat
 app.delete("/api/chats/:id", (req, res) => {
   const index = chats.findIndex((c) => c.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: "Chat no encontrado" });
@@ -73,6 +81,6 @@ app.delete("/api/chats/:id", (req, res) => {
   res.json({ success: true });
 });
 
-// ⚡ Puerto Railway (obligatorio 8080)
+// ⚠️ Puerto Railway 8080
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => console.log(`✅ Servidor corriendo en puerto ${PORT}`));
