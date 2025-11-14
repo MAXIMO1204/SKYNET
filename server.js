@@ -1,39 +1,32 @@
 import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
-import { textGenerationStream } from "@huggingface/inference";
+import { HfInference } from "@huggingface/inference";
 
 dotenv.config();
 
 const app = express();
-
-// 🔹 CORS abierto para web y móvil
 app.use(cors());
 app.use(express.json());
 
-// Memoria RAM
+const hf = new HfInference(process.env.HF_TOKEN);
+
 let chats = [];
 
-/* ============================================================
-   POST /api/chat  ➜ Crear o continuar un chat
-============================================================ */
 app.post("/api/chat", async (req, res) => {
   try {
     const { message, chatId, title } = req.body;
-
     if (!message || message.trim() === "")
       return res.status(400).json({ error: "Mensaje vacío" });
 
-    // 🔹 Llamada correcta a HuggingFace
-    let respuesta = "";
-    for await (const chunk of textGenerationStream({
-      model: "deepseek-ai/DeepSeek-V3.2-Exp:novita",
+    // 🔹 Llamada simple a HuggingFace (no stream)
+    const completion = await hf.textGeneration({
+      model: "gpt2", // usa un modelo seguro para probar
       inputs: message,
-      parameters: { max_new_tokens: 200 },
-      accessToken: process.env.HF_TOKEN
-    })) {
-      if (chunk.token) respuesta += chunk.token.text;
-    }
+      parameters: { max_new_tokens: 200 }
+    });
+
+    const respuesta = completion.generated_text;
 
     const id = chatId || Date.now().toString();
     const index = chats.findIndex((c) => c.id === id);
@@ -61,33 +54,22 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
-/* ============================================================
-   GET /api/chats  ➜ Listar títulos
-============================================================ */
 app.get("/api/chats", (req, res) => {
   res.json(chats.map(({ id, title }) => ({ id, title })));
 });
 
-/* ============================================================
-   GET /api/chats/:id  ➜ Obtener chat completo
-============================================================ */
 app.get("/api/chats/:id", (req, res) => {
   const chat = chats.find((c) => c.id === req.params.id);
   if (!chat) return res.status(404).json({ error: "Chat no encontrado" });
   res.json(chat);
 });
 
-/* ============================================================
-   DELETE /api/chats/:id  ➜ Eliminar chat
-============================================================ */
 app.delete("/api/chats/:id", (req, res) => {
   const index = chats.findIndex((c) => c.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: "Chat no encontrado" });
-
   chats.splice(index, 1);
   res.json({ success: true });
 });
 
-// Listener
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => console.log(`✅ Servidor corriendo en puerto ${PORT}`));
