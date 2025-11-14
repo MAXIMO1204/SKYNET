@@ -26,30 +26,19 @@ export default function IAForm() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // GENERAR TÍTULO AUTOMÁTICO
+  // Crear título automático
   const generateTitle = (text) => {
     let words = text.trim().split(" ");
     let title = words.slice(0, 5).join(" ");
     return title.charAt(0).toUpperCase() + title.slice(1);
   };
 
-  // CARGAR CHATS
+  // Cargar listado de chats
   const loadAllChats = async () => {
     try {
       const { data } = await api.get("/chats");
-      const chatsArray = Array.isArray(data) ? data : [];
-      setAllChats(chatsArray);
-
-      if (chatsArray.length > 0 && !chatId) {
-        const lastChat = chatsArray[chatsArray.length - 1];
-        const chatData = await api.get(`/chats/${lastChat.id}`);
-        setChatId(chatData.data.id);
-        setMessages(chatData.data.messages || []);
-      }
-    } catch (err) {
-      console.error("Error cargando chats:", err);
-      setMessages([]);
-      setChatId(null);
+      setAllChats(Array.isArray(data) ? data : []);
+    } catch {
       setAllChats([]);
     }
   };
@@ -58,64 +47,53 @@ export default function IAForm() {
     loadAllChats();
   }, []);
 
-  // NUEVO CHAT
+  // Nuevo chat
   const createNewChat = () => {
     setMessages([]);
     setChatId(null);
     setInput("");
   };
 
-  // SELECCIONAR CHAT
+  // Seleccionar chat
   const selectChat = async (id) => {
     try {
       const { data } = await api.get(`/chats/${id}`);
       setChatId(data.id);
       setMessages(data.messages || []);
       setMenuOpen(false);
-    } catch (err) {
-      console.error("Error cargando chat:", err);
+    } catch {
+      console.error("Error cargando chat");
     }
   };
 
-  // ELIMINAR CHAT
+  // Eliminar chat
   const confirmDelete = async (id) => {
-    const menu = await Swal.fire({
-      title: "Opciones",
-      showCancelButton: true,
-      confirmButtonText: "Eliminar Chat",
-      cancelButtonText: "Cancelar",
-      icon: "info",
-    });
-
-    if (!menu.isConfirmed) return;
-
-    const result = await Swal.fire({
-      title: "¿Estás seguro?",
-      text: "Esto no se puede deshacer",
+    const confirm = await Swal.fire({
+      title: "¿Eliminar chat?",
+      text: "No se puede deshacer",
       icon: "warning",
       showCancelButton: true,
       confirmButtonText: "Sí, eliminar",
       cancelButtonText: "Cancelar",
     });
 
-    if (result.isConfirmed) {
-      try {
-        await api.delete(`/chats/${id}`);
-        Swal.fire("Eliminado", "Chat eliminado correctamente", "success");
+    if (!confirm.isConfirmed) return;
 
-        if (id === chatId) {
-          setMessages([]);
-          setChatId(null);
-        }
+    try {
+      await api.delete(`/chats/${id}`);
 
-        loadAllChats();
-      } catch (err) {
-        Swal.fire("Error", "No se pudo eliminar el chat", "error");
+      if (id === chatId) {
+        setMessages([]);
+        setChatId(null);
       }
+
+      loadAllChats();
+    } catch {
+      Swal.fire("Error", "No se pudo eliminar", "error");
     }
   };
 
-  // ENVIAR MENSAJE
+  // Enviar mensaje
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!input.trim()) return;
@@ -126,19 +104,16 @@ export default function IAForm() {
     setLoading(true);
 
     try {
+      const title = !chatId ? generateTitle(userMessage.content) : undefined;
+
       const { data } = await api.post("/chat", {
         message: userMessage.content,
         chatId,
+        title,
       });
 
       const aiMessage = { role: "ai", content: data.response };
       setMessages((prev) => [...prev, aiMessage]);
-
-      // SI ES UN CHAT NUEVO → LE PONEMOS TÍTULO
-      if (!chatId) {
-        const newTitle = generateTitle(userMessage.content);
-        await api.put(`/chats/${data.chatId}`, { title: newTitle });
-      }
 
       if (!chatId) setChatId(data.chatId);
 
@@ -187,9 +162,9 @@ export default function IAForm() {
   // TEMPLATE
   return (
     <div className="main-container">
-
-      {/* Overlay para cerrar menú en mobile */}
-      {menuOpen && <div className="menu-overlay" onClick={() => setMenuOpen(false)} />}
+      {menuOpen && (
+        <div className="menu-overlay" onClick={() => setMenuOpen(false)} />
+      )}
 
       <button className="hamburger" onClick={() => setMenuOpen(!menuOpen)}>
         ☰
@@ -262,4 +237,5 @@ export default function IAForm() {
     </div>
   );
 }
+
 

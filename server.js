@@ -7,52 +7,53 @@ dotenv.config();
 
 const app = express();
 
-// ✅ CORS abierto
+// CORS
 app.use(cors({ origin: "*" }));
-app.options("*", cors());
-
-// ✅ JSON middleware
 app.use(express.json());
 
-// Cliente OpenAI/Hugging Face
+// Cliente OpenAI/HuggingFace
 const client = new OpenAI({
   baseURL: "https://router.huggingface.co/v1",
   apiKey: process.env.HF_TOKEN || process.env.OPENAI_API_KEY,
 });
 
-// Memoria de chats en RAM
+// Memoria RAM
 let chats = [];
 
-// Crear o continuar chat
+/* ============================================================
+   POST /api/chat  ➜ Crear o continuar un chat
+============================================================ */
 app.post("/api/chat", async (req, res) => {
   try {
     const { message, chatId, title } = req.body;
+
     if (!message || message.trim() === "")
       return res.status(400).json({ error: "Mensaje vacío" });
 
-    const chatCompletion = await client.chat.completions.create({
+    const completion = await client.chat.completions.create({
       model: "deepseek-ai/DeepSeek-V3.2-Exp:novita",
       messages: [{ role: "user", content: message }],
     });
 
-    const respuesta = chatCompletion.choices[0].message.content;
+    const respuesta = completion.choices[0].message.content;
     const id = chatId || Date.now().toString();
     const index = chats.findIndex((c) => c.id === id);
 
-    const newMessage = [
+    const newMessages = [
       { role: "user", content: message },
       { role: "ai", content: respuesta },
     ];
 
     if (index === -1) {
+      // Nuevo chat con título
       chats.push({
         id,
         title: title || `Chat ${chats.length + 1}`,
-        messages: newMessage,
+        messages: newMessages,
       });
     } else {
-      chats[index].messages.push(...newMessage);
-      if (title && !chats[index].title.includes("Chat")) chats[index].title = title;
+      chats[index].messages.push(...newMessages);
+      if (title) chats[index].title = title;
     }
 
     res.json({ response: respuesta, chatId: id });
@@ -62,26 +63,33 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
-// Listar chats
+/* ============================================================
+   GET /api/chats  ➜ Listar títulos
+============================================================ */
 app.get("/api/chats", (req, res) => {
   res.json(chats.map(({ id, title }) => ({ id, title })));
 });
 
-// Obtener chat por ID
+/* ============================================================
+   GET /api/chats/:id  ➜ Obtener chat completo
+============================================================ */
 app.get("/api/chats/:id", (req, res) => {
   const chat = chats.find((c) => c.id === req.params.id);
   if (!chat) return res.status(404).json({ error: "Chat no encontrado" });
-  res.json({ id: chat.id, title: chat.title, messages: chat.messages });
+  res.json(chat);
 });
 
-// Eliminar chat
+/* ============================================================
+   DELETE /api/chats/:id  ➜ Eliminar chat
+============================================================ */
 app.delete("/api/chats/:id", (req, res) => {
   const index = chats.findIndex((c) => c.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: "Chat no encontrado" });
+
   chats.splice(index, 1);
   res.json({ success: true });
 });
 
-// ⚠️ Puerto Railway o local
+// Listener
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => console.log(`✅ Servidor corriendo en puerto ${PORT}`));
