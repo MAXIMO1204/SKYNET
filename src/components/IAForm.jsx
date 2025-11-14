@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import ReactMarkdown from "react-markdown";
 import Swal from "sweetalert2";
+import { SpeechRecognition } from "@capacitor-community/speech-recognition";
 import "./IAForm.css";
 
 const api = axios.create({
@@ -19,7 +20,6 @@ export default function IAForm() {
   const [listening, setListening] = useState(false);
 
   const chatEndRef = useRef(null);
-  const recognitionRef = useRef(null);
 
   // AUTOSCROLL
   useEffect(() => {
@@ -128,34 +128,25 @@ export default function IAForm() {
     }
   };
 
-  // MICROFONO
-  const startListening = () => {
-    if (!("webkitSpeechRecognition" in window)) {
-      alert("Tu navegador no soporta reconocimiento de voz.");
-      return;
+  // MICROFONO (solo Capacitor plugin, sin webkit)
+  const startListening = async () => {
+    try {
+      await SpeechRecognition.requestPermission();
+      const result = await SpeechRecognition.start({ language: "es-AR" });
+      if (result.matches && result.matches.length > 0) {
+        setInput((prev) => prev + " " + result.matches[0]);
+      }
+      setListening(true);
+    } catch (err) {
+      console.error("Error micrófono:", err);
+      setListening(false);
     }
-
-    const recognition = new webkitSpeechRecognition();
-    recognitionRef.current = recognition;
-
-    recognition.lang = "es-AR";
-    recognition.continuous = false;
-    recognition.interimResults = false;
-
-    recognition.onstart = () => setListening(true);
-    recognition.onerror = () => setListening(false);
-    recognition.onend = () => setListening(false);
-
-    recognition.onresult = (event) => {
-      const text = event.results[0][0].transcript;
-      setInput((prev) => prev + " " + text);
-    };
-
-    recognition.start();
   };
 
-  const stopListening = () => {
-    recognitionRef.current?.stop();
+  const stopListening = async () => {
+    try {
+      await SpeechRecognition.stop();
+    } catch {}
     setListening(false);
   };
 
@@ -171,33 +162,32 @@ export default function IAForm() {
       </button>
 
       <aside className={`sidebar ${menuOpen ? "open" : ""}`}>
-  <div className="sidebar-content">
-    <button className="new-chat-btn" onClick={createNewChat}>
-      ➕ Nuevo Chat
-    </button>
-
-    <div className="chat-list">
-      {allChats.map((chat) => (
-        <div
-          key={chat.id}
-          className={`chat-item ${chat.id === chatId ? "active" : ""}`}
-        >
-          <span onClick={() => selectChat(chat.id)}>
-            {chat.title || "Chat sin título"}
-          </span>
-
-          <button
-            className="chat-options"
-            onClick={() => confirmDelete(chat.id)}
-          >
-            ⋮
+        <div className="sidebar-content">
+          <button className="new-chat-btn" onClick={createNewChat}>
+            ➕ Nuevo Chat
           </button>
-        </div>
-      ))}
-    </div>
-  </div>
-</aside>
 
+          <div className="chat-list">
+            {allChats.map((chat) => (
+              <div
+                key={chat.id}
+                className={`chat-item ${chat.id === chatId ? "active" : ""}`}
+              >
+                <span onClick={() => selectChat(chat.id)}>
+                  {chat.title || "Chat sin título"}
+                </span>
+
+                <button
+                  className="chat-options"
+                  onClick={() => confirmDelete(chat.id)}
+                >
+                  ⋮
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </aside>
 
       <section className="chat-section">
         <div className="chat-container">
@@ -243,5 +233,3 @@ export default function IAForm() {
     </div>
   );
 }
-
-

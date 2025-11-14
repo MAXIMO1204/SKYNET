@@ -7,8 +7,16 @@ dotenv.config();
 
 const app = express();
 
-// CORS
-app.use(cors({ origin: "*" }));
+// 🔹 CORS: habilitamos web y móvil (capacitor://localhost)
+app.use(cors({
+  origin: [
+    "http://localhost:5173",
+    "http://localhost",
+    "capacitor://localhost",
+    "https://skynet-production-6ead.up.railway.app"
+  ],
+  methods: ["GET", "POST", "DELETE"],
+}));
 app.use(express.json());
 
 // Cliente OpenAI/HuggingFace
@@ -45,7 +53,6 @@ app.post("/api/chat", async (req, res) => {
     ];
 
     if (index === -1) {
-      // Nuevo chat con título
       chats.push({
         id,
         title: title || `Chat ${chats.length + 1}`,

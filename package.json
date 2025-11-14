@@ -8,6 +8,7 @@
     "dev": "concurrently \"nodemon server.js\" \"vite\""
   },
   "dependencies": {
+    "@capacitor-community/speech-recognition": "^7.0.1",
     "@capacitor/android": "^7.4.4",
     "@huggingface/inference": "^4.10.0",
     "axios": "^1.13.2",
