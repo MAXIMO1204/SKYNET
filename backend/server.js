@@ -6,19 +6,25 @@ import { OpenAI } from "openai";
 dotenv.config();
 const app = express();
 
-// ✅ CORS abierto para cualquier origen (usable en móviles, WiFi, 4G/5G, etc.)
-app.use(
-  cors({
-    origin: "*",
-    methods: ["GET", "POST", "OPTIONS", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
-
-app.options("*", cors());
+// ✅ Middleware para parsear JSON
 app.use(express.json());
 
-// ✅ Cliente Hugging Face vía OpenAI SDK
+// ✅ CORS universal para cualquier origen (localhost, móviles, producción)
+app.use(cors());
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+  );
+  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, DELETE");
+  next();
+});
+
+// ✅ Responder OPTIONS para preflight requests
+app.options("*", (req, res) => res.sendStatus(200));
+
+// ✅ Cliente OpenAI/Hugging Face
 const client = new OpenAI({
   baseURL: "https://router.huggingface.co/v1",
   apiKey: process.env.HF_TOKEN || process.env.OPENAI_API_KEY,
@@ -89,6 +95,6 @@ app.delete("/api/chats/:id", (req, res) => {
   res.json({ success: true });
 });
 
-// ✅ Puerto correcto para Railway
-const PORT = process.env.PORT || 4000;
+// ✅ Puerto Railway
+const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => console.log(`✅ Servidor corriendo en puerto ${PORT}`));
