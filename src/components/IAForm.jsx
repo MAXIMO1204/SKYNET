@@ -128,15 +128,35 @@ export default function IAForm() {
     }
   };
 
-  // MICROFONO (solo Capacitor plugin, sin webkit)
+  // MICROFONO dual (web y Android)
   const startListening = async () => {
     try {
-      await SpeechRecognition.requestPermission();
-      const result = await SpeechRecognition.start({ language: "es-AR" });
-      if (result.matches && result.matches.length > 0) {
-        setInput((prev) => prev + " " + result.matches[0]);
+      if ("webkitSpeechRecognition" in window) {
+        // Web (Chrome)
+        const recognition = new window.webkitSpeechRecognition();
+        recognition.lang = "es-AR";
+        recognition.continuous = false;
+        recognition.interimResults = false;
+
+        recognition.onresult = (event) => {
+          const text = event.results[0][0].transcript;
+          setInput((prev) => prev + " " + text);
+        };
+
+        recognition.onstart = () => setListening(true);
+        recognition.onend = () => setListening(false);
+        recognition.onerror = () => setListening(false);
+
+        recognition.start();
+      } else {
+        // Android (Capacitor plugin)
+        await SpeechRecognition.requestPermission();
+        const result = await SpeechRecognition.start({ language: "es-AR" });
+        if (result.matches && result.matches.length > 0) {
+          setInput((prev) => prev + " " + result.matches[0]);
+        }
+        setListening(true);
       }
-      setListening(true);
     } catch (err) {
       console.error("Error micrófono:", err);
       setListening(false);
@@ -145,7 +165,12 @@ export default function IAForm() {
 
   const stopListening = async () => {
     try {
-      await SpeechRecognition.stop();
+      if ("webkitSpeechRecognition" in window) {
+        // Web: Chrome corta solo
+      } else {
+        // Android
+        await SpeechRecognition.stop();
+      }
     } catch {}
     setListening(false);
   };

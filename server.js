@@ -1,49 +1,37 @@
 import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
-import { OpenAI } from "openai";
+import { chatCompletion, textGenerationStream } from "@huggingface/inference";
 
 dotenv.config();
 
 const app = express();
-
-// 🔹 CORS: habilitamos web y móvil (capacitor://localhost)
-app.use(cors({
-  origin: [
-    "http://localhost:5173",
-    "http://localhost",
-    "capacitor://localhost",
-    "https://skynet-production-6ead.up.railway.app"
-  ],
-  methods: ["GET", "POST", "DELETE"],
-}));
+app.use(cors());
 app.use(express.json());
-
-// Cliente OpenAI/HuggingFace
-const client = new OpenAI({
-  baseURL: "https://router.huggingface.co/v1",
-  apiKey: process.env.HF_TOKEN || process.env.OPENAI_API_KEY,
-});
 
 // Memoria RAM
 let chats = [];
 
 /* ============================================================
-   POST /api/chat  ➜ Crear o continuar un chat
+   POST /api/chat
 ============================================================ */
 app.post("/api/chat", async (req, res) => {
   try {
     const { message, chatId, title } = req.body;
-
     if (!message || message.trim() === "")
       return res.status(400).json({ error: "Mensaje vacío" });
 
-    const completion = await client.chat.completions.create({
+    // 🔹 Llamada correcta a HuggingFace
+    let respuesta = "";
+    for await (const chunk of textGenerationStream({
       model: "deepseek-ai/DeepSeek-V3.2-Exp:novita",
-      messages: [{ role: "user", content: message }],
-    });
+      inputs: message,
+      parameters: { max_new_tokens: 200 },
+      accessToken: process.env.HF_TOKEN
+    })) {
+      if (chunk.token) respuesta += chunk.token.text;
+    }
 
-    const respuesta = completion.choices[0].message.content;
     const id = chatId || Date.now().toString();
     const index = chats.findIndex((c) => c.id === id);
 
@@ -71,14 +59,14 @@ app.post("/api/chat", async (req, res) => {
 });
 
 /* ============================================================
-   GET /api/chats  ➜ Listar títulos
+   GET /api/chats
 ============================================================ */
 app.get("/api/chats", (req, res) => {
   res.json(chats.map(({ id, title }) => ({ id, title })));
 });
 
 /* ============================================================
-   GET /api/chats/:id  ➜ Obtener chat completo
+   GET /api/chats/:id
 ============================================================ */
 app.get("/api/chats/:id", (req, res) => {
   const chat = chats.find((c) => c.id === req.params.id);
@@ -87,7 +75,7 @@ app.get("/api/chats/:id", (req, res) => {
 });
 
 /* ============================================================
-   DELETE /api/chats/:id  ➜ Eliminar chat
+   DELETE /api/chats/:id
 ============================================================ */
 app.delete("/api/chats/:id", (req, res) => {
   const index = chats.findIndex((c) => c.id === req.params.id);
