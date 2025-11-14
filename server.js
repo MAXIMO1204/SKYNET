@@ -1,11 +1,13 @@
 import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
-import { chatCompletion, textGenerationStream } from "@huggingface/inference";
+import { textGenerationStream } from "@huggingface/inference";
 
 dotenv.config();
 
 const app = express();
+
+// 🔹 CORS abierto para web y móvil
 app.use(cors());
 app.use(express.json());
 
@@ -13,11 +15,12 @@ app.use(express.json());
 let chats = [];
 
 /* ============================================================
-   POST /api/chat
+   POST /api/chat  ➜ Crear o continuar un chat
 ============================================================ */
 app.post("/api/chat", async (req, res) => {
   try {
     const { message, chatId, title } = req.body;
+
     if (!message || message.trim() === "")
       return res.status(400).json({ error: "Mensaje vacío" });
 
@@ -59,14 +62,14 @@ app.post("/api/chat", async (req, res) => {
 });
 
 /* ============================================================
-   GET /api/chats
+   GET /api/chats  ➜ Listar títulos
 ============================================================ */
 app.get("/api/chats", (req, res) => {
   res.json(chats.map(({ id, title }) => ({ id, title })));
 });
 
 /* ============================================================
-   GET /api/chats/:id
+   GET /api/chats/:id  ➜ Obtener chat completo
 ============================================================ */
 app.get("/api/chats/:id", (req, res) => {
   const chat = chats.find((c) => c.id === req.params.id);
@@ -75,7 +78,7 @@ app.get("/api/chats/:id", (req, res) => {
 });
 
 /* ============================================================
-   DELETE /api/chats/:id
+   DELETE /api/chats/:id  ➜ Eliminar chat
 ============================================================ */
 app.delete("/api/chats/:id", (req, res) => {
   const index = chats.findIndex((c) => c.id === req.params.id);
