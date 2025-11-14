@@ -1,0 +1,25 @@
+# Node.js
+node_modules/
+.env
+package-lock.json
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Archivos del sistema
+desktop.ini
+Thumbs.db
+*.lnk
+
+# Python (por si mezclás proyectos)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite
+*.sqlite3
