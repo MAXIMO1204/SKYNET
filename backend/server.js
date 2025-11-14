@@ -6,40 +6,31 @@ import { OpenAI } from "openai";
 dotenv.config();
 const app = express();
 
-// ✅ Middleware para parsear JSON
+// ✅ CORS abierto para cualquier origen
+app.use(
+  cors({
+    origin: "*", // Permite cualquier dominio
+    methods: ["GET", "POST", "OPTIONS", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+app.options("*", cors());
 app.use(express.json());
 
-// ✅ CORS universal para cualquier origen (localhost, móviles, producción)
-app.use(cors());
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
-  );
-  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, DELETE");
-  next();
-});
-
-// ✅ Responder OPTIONS para preflight requests
-app.options("*", (req, res) => res.sendStatus(200));
-
-// ✅ Cliente OpenAI/Hugging Face
+// Cliente OpenAI/Hugging Face
 const client = new OpenAI({
   baseURL: "https://router.huggingface.co/v1",
   apiKey: process.env.HF_TOKEN || process.env.OPENAI_API_KEY,
 });
 
-// ✅ Memoria de chats en RAM
 let chats = [];
 
 // Crear o continuar chat
 app.post("/api/chat", async (req, res) => {
   try {
     const { message, chatId, title } = req.body;
-    if (!message || message.trim() === "") {
-      return res.status(400).json({ error: "El mensaje no puede estar vacío." });
-    }
+    if (!message || message.trim() === "") return res.status(400).json({ error: "Mensaje vacío" });
 
     const chatCompletion = await client.chat.completions.create({
       model: "deepseek-ai/DeepSeek-V3.2-Exp:novita",
@@ -50,28 +41,19 @@ app.post("/api/chat", async (req, res) => {
     const id = chatId || Date.now().toString();
     const index = chats.findIndex((c) => c.id === id);
 
-    const newMessage = [
-      { role: "user", content: message },
-      { role: "ai", content: respuesta },
-    ];
+    const newMessage = [{ role: "user", content: message }, { role: "ai", content: respuesta }];
 
     if (index === -1) {
-      chats.push({
-        id,
-        title: title || `Chat ${chats.length + 1}`,
-        messages: newMessage,
-      });
+      chats.push({ id, title: title || `Chat ${chats.length + 1}`, messages: newMessage });
     } else {
       chats[index].messages.push(...newMessage);
-      if (title && !chats[index].title.includes("Chat")) {
-        chats[index].title = title;
-      }
+      if (title && !chats[index].title.includes("Chat")) chats[index].title = title;
     }
 
     res.json({ response: respuesta, chatId: id });
   } catch (err) {
-    console.error("❌ Error en backend:", err.message);
-    res.status(500).json({ error: "Error procesando la solicitud en el backend." });
+    console.error(err);
+    res.status(500).json({ error: "Error procesando la solicitud" });
   }
 });
 
@@ -80,21 +62,21 @@ app.get("/api/chats", (req, res) => {
   res.json(chats.map(({ id, title }) => ({ id, title })));
 });
 
-// Cargar conversación completa
+// Obtener chat por ID
 app.get("/api/chats/:id", (req, res) => {
   const chat = chats.find((c) => c.id === req.params.id);
-  if (!chat) return res.status(404).json({ error: "Chat no encontrado." });
+  if (!chat) return res.status(404).json({ error: "Chat no encontrado" });
   res.json({ id: chat.id, title: chat.title, messages: chat.messages });
 });
 
 // Eliminar chat
 app.delete("/api/chats/:id", (req, res) => {
   const index = chats.findIndex((c) => c.id === req.params.id);
-  if (index === -1) return res.status(404).json({ error: "Chat no encontrado." });
+  if (index === -1) return res.status(404).json({ error: "Chat no encontrado" });
   chats.splice(index, 1);
   res.json({ success: true });
 });
 
-// ✅ Puerto Railway
-const PORT = process.env.PORT || 8080;
+// Puerto Railway
+const PORT = process.env.PORT || 8080; // ⚠️ Railway usa 8080
 app.listen(PORT, () => console.log(`✅ Servidor corriendo en puerto ${PORT}`));

@@ -23,19 +23,24 @@ export default function IAForm() {
   }, [messages]);
 
   const loadAllChats = async () => {
-    try {
-      const { data } = await api.get("/chats");
-      setAllChats(data);
-      if (!chatId && data.length > 0) {
-        const lastChat = data[data.length - 1];
-        const chatData = await api.get(`/chats/${lastChat.id}`);
-        setChatId(chatData.data.id);
-        setMessages(chatData.data.messages);
-      }
-    } catch (err) {
-      console.error("Error cargando chats:", err);
+  try {
+    const { data } = await api.get("/chats");
+    setAllChats(data);
+
+    if (!chatId && data.length > 0) {
+      const lastChat = data[data.length - 1];
+      const chatData = await api.get(`/chats/${lastChat.id}`);
+      setChatId(chatData.data.id);
+      setMessages(chatData.data.messages);
+    } else if (data.length === 0) {
+      setMessages([]); // Si no hay chats, mostrar vacío
+      setChatId(null);
     }
-  };
+  } catch (err) {
+    console.error("Error cargando chats:", err);
+  }
+};
+
 
   useEffect(() => {
     loadAllChats();
