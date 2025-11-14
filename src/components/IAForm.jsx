@@ -6,12 +6,11 @@ import ReactMarkdown from "react-markdown";
 import Swal from "sweetalert2";
 import "./IAForm.css";
 
-// ✅ URL pública del backend en Railway (ajusta con tu dominio generado)
+// ✅ URL pública del backend en Railway
 const api = axios.create({
   baseURL: "https://skynet-production-6ead.up.railway.app/api",
   headers: { "Content-Type": "application/json" },
 });
-
 
 export default function IAForm() {
   const [input, setInput] = useState("");
@@ -200,5 +199,3 @@ export default function IAForm() {
     </div>
   );
 }
-
-
