@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "dev": "concurrently \"nodemon server.js\" \"vite\""
+    "dev": "concurrently \"nodemon server.js\" \"vite\"",
+    "build": "vite build"
   },
   "dependencies": {
     "@capacitor-community/speech-recognition": "^7.0.1",
