@@ -1,3 +1,4 @@
+// server.js
 import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
@@ -6,11 +7,11 @@ import { OpenAI } from "openai";
 dotenv.config();
 const app = express();
 
-// ✅ CORS abierto para cualquier origen
+// CORS abierto para cualquier origen
 app.use(cors({ origin: "*" }));
 app.options("*", cors());
 
-// ✅ JSON middleware
+// JSON middleware
 app.use(express.json());
 
 // Cliente OpenAI/Hugging Face
@@ -19,7 +20,7 @@ const client = new OpenAI({
   apiKey: process.env.HF_TOKEN || process.env.OPENAI_API_KEY,
 });
 
-// Memoria de chats en RAM
+// Memoria de chats
 let chats = [];
 
 // Crear o continuar chat
@@ -81,6 +82,6 @@ app.delete("/api/chats/:id", (req, res) => {
   res.json({ success: true });
 });
 
-// ⚠️ Puerto Railway 8080
+// Puerto Railway
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => console.log(`✅ Servidor corriendo en puerto ${PORT}`));

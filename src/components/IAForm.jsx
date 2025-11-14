@@ -105,12 +105,8 @@ export default function IAForm() {
   return (
     <div className="main-container">
       <aside className={`sidebar ${menuOpen ? "open" : ""}`}>
-        <button className="hamburger" onClick={() => setMenuOpen(!menuOpen)}>
-          ☰
-        </button>
-        <button className="new-chat-btn" onClick={createNewChat}>
-          ➕ Nuevo Chat
-        </button>
+        <button className="hamburger" onClick={() => setMenuOpen(!menuOpen)}>☰</button>
+        <button className="new-chat-btn" onClick={createNewChat}>➕ Nuevo Chat</button>
         <div className="chat-list">
           {allChats.map((chat) => (
             <div key={chat.id} className={`chat-item ${chat.id === chatId ? "active" : ""}`}>
@@ -123,10 +119,7 @@ export default function IAForm() {
 
       <section className="chat-section">
         <div className="chat-container">
-          <div className="chat-header">
-            <h2>Skynet AI</h2>
-          </div>
-
+          <div className="chat-header"><h2>Skynet AI</h2></div>
           <div className="chat-body">
             {messages.map((msg, i) => (
               <div key={i} className={`chat-message ${msg.role}`}>
@@ -143,14 +136,10 @@ export default function IAForm() {
               placeholder="Escribe tu mensaje..."
               rows={2}
             />
-            <button type="submit" disabled={loading}>
-              {loading ? "⏳" : "Enviar"}
-            </button>
+            <button type="submit" disabled={loading}>{loading ? "⏳" : "Enviar"}</button>
           </form>
 
-          <div className="chat-footer">
-            © 2025 Ramiro Atencio — Proyecto IA Académica
-          </div>
+          <div className="chat-footer">© 2025 Ramiro Atencio — Proyecto IA Académica</div>
         </div>
       </section>
     </div>

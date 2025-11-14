@@ -1,5 +1,5 @@
 {
-  "name": "skynet-backend",
+  "name": "skynet",
   "version": "1.0.0",
   "description": "Backend de SKYNET con Express y Hugging Face",
   "main": "server.js",
