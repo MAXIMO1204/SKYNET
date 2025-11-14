@@ -4,6 +4,7 @@ import ReactMarkdown from "react-markdown";
 import Swal from "sweetalert2";
 import "./IAForm.css";
 
+// Configuración base del API
 const api = axios.create({
   baseURL: "https://skynet-production-6ead.up.railway.app/api",
   headers: { "Content-Type": "application/json" },
@@ -25,13 +26,16 @@ export default function IAForm() {
   const loadAllChats = async () => {
     try {
       const { data } = await api.get("/chats");
-      setAllChats(data);
 
-      if (data.length > 0 && !chatId) {
-        const lastChat = data[data.length - 1];
+      // Asegurarse que data sea siempre un array
+      const chatsArray = Array.isArray(data) ? data : [];
+      setAllChats(chatsArray);
+
+      if (chatsArray.length > 0 && !chatId) {
+        const lastChat = chatsArray[chatsArray.length - 1];
         const chatData = await api.get(`/chats/${lastChat.id}`);
         setChatId(chatData.data.id);
-        setMessages(chatData.data.messages);
+        setMessages(chatData.data.messages || []);
       } else {
         setMessages([]);
         setChatId(null);
@@ -40,6 +44,7 @@ export default function IAForm() {
       console.error("Error cargando chats:", err);
       setMessages([]);
       setChatId(null);
+      setAllChats([]);
     }
   };
 
@@ -56,7 +61,7 @@ export default function IAForm() {
     try {
       const { data } = await api.get(`/chats/${id}`);
       setChatId(data.id);
-      setMessages(data.messages);
+      setMessages(data.messages || []);
       setMenuOpen(false);
     } catch (err) {
       console.error("No se pudo cargar el chat:", err);
@@ -105,21 +110,29 @@ export default function IAForm() {
   return (
     <div className="main-container">
       <aside className={`sidebar ${menuOpen ? "open" : ""}`}>
-        <button className="hamburger" onClick={() => setMenuOpen(!menuOpen)}>☰</button>
-        <button className="new-chat-btn" onClick={createNewChat}>➕ Nuevo Chat</button>
+        <button className="hamburger" onClick={() => setMenuOpen(!menuOpen)}>
+          ☰
+        </button>
+        <button className="new-chat-btn" onClick={createNewChat}>
+          ➕ Nuevo Chat
+        </button>
         <div className="chat-list">
-          {allChats.map((chat) => (
-            <div key={chat.id} className={`chat-item ${chat.id === chatId ? "active" : ""}`}>
-              <span onClick={() => selectChat(chat.id)}>{chat.title}</span>
-              <button className="chat-options" onClick={() => deleteChat(chat.id)}>⋮</button>
-            </div>
-          ))}
+          {Array.isArray(allChats) &&
+            allChats.map((chat) => (
+              <div key={chat.id} className={`chat-item ${chat.id === chatId ? "active" : ""}`}>
+                <span onClick={() => selectChat(chat.id)}>{chat.title}</span>
+                <button className="chat-options" onClick={() => deleteChat(chat.id)}>⋮</button>
+              </div>
+            ))}
         </div>
       </aside>
 
       <section className="chat-section">
         <div className="chat-container">
-          <div className="chat-header"><h2>Skynet AI</h2></div>
+          <div className="chat-header">
+            <h2>Skynet AI</h2>
+          </div>
+
           <div className="chat-body">
             {messages.map((msg, i) => (
               <div key={i} className={`chat-message ${msg.role}`}>
@@ -136,13 +149,16 @@ export default function IAForm() {
               placeholder="Escribe tu mensaje..."
               rows={2}
             />
-            <button type="submit" disabled={loading}>{loading ? "⏳" : "Enviar"}</button>
+            <button type="submit" disabled={loading}>
+              {loading ? "⏳" : "Enviar"}
+            </button>
           </form>
 
-          <div className="chat-footer">© 2025 Ramiro Atencio — Proyecto IA Académica</div>
+          <div className="chat-footer">
+            © 2025 Ramiro Atencio — Proyecto IA Académica
+          </div>
         </div>
       </section>
     </div>
   );
 }
-
