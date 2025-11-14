@@ -6,35 +6,28 @@ import { OpenAI } from "openai";
 dotenv.config();
 const app = express();
 
-
-
-// CORS blindado
-const allowedOrigins = ["http://localhost:3000", "http://localhost:5173"];
+// ✅ CORS abierto para cualquier origen (usable en móviles, WiFi, 4G/5G, etc.)
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
-      return callback(new Error(`❌ CORS bloqueado para el origen: ${origin}`), false);
-    },
+    origin: "*",
     methods: ["GET", "POST", "OPTIONS", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
   })
 );
+
 app.options("*", cors());
 app.use(express.json());
 
-//  Cliente Hugging Face
+// ✅ Cliente Hugging Face vía OpenAI SDK
 const client = new OpenAI({
   baseURL: "https://router.huggingface.co/v1",
-  apiKey: process.env.HF_TOKEN,
+  apiKey: process.env.HF_TOKEN || process.env.OPENAI_API_KEY,
 });
 
-//  Memoria de chats
+// ✅ Memoria de chats en RAM
 let chats = [];
 
-//  Crear o continuar chat
+// Crear o continuar chat
 app.post("/api/chat", async (req, res) => {
   try {
     const { message, chatId, title } = req.body;
@@ -76,19 +69,19 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
-//  Listar chats
+// Listar chats
 app.get("/api/chats", (req, res) => {
   res.json(chats.map(({ id, title }) => ({ id, title })));
 });
 
-//  Cargar conversación completa
+// Cargar conversación completa
 app.get("/api/chats/:id", (req, res) => {
   const chat = chats.find((c) => c.id === req.params.id);
   if (!chat) return res.status(404).json({ error: "Chat no encontrado." });
-  res.json({ title: chat.title, messages: chat.messages });
+  res.json({ id: chat.id, title: chat.title, messages: chat.messages });
 });
 
-//  Eliminar chat
+// Eliminar chat
 app.delete("/api/chats/:id", (req, res) => {
   const index = chats.findIndex((c) => c.id === req.params.id);
   if (index === -1) return res.status(404).json({ error: "Chat no encontrado." });
@@ -96,7 +89,6 @@ app.delete("/api/chats/:id", (req, res) => {
   res.json({ success: true });
 });
 
-
-//  Iniciar servidor
+// Iniciar servidor
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => console.log(`✅ Servidor corriendo en puerto ${PORT}`));

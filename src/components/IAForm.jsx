@@ -6,9 +6,9 @@ import ReactMarkdown from "react-markdown";
 import Swal from "sweetalert2";
 import "./IAForm.css";
 
-// URL final de Railway
+// URL pública del backend (Railway)
 const api = axios.create({
-  baseURL: "https://skynet-backend-production-9149.up.railway.app/api",
+  baseURL: "https://skynet-backend-production.up.railway.app/api",
   headers: { "Content-Type": "application/json" },
 });
 
@@ -21,18 +21,21 @@ export default function IAForm() {
   const [listening, setListening] = useState(false);
   const chatEndRef = useRef(null);
 
-  // Scroll automático
-  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+  // Scroll automático al final del chat
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
-  // Cargar todos los chats desde backend
+  // Cargar todos los chats (sidebar) y el último chat
   const loadAllChats = async () => {
     try {
-      const { data } = await api.get("/chats");
+      const { data } = await api.get("/chats"); // [{id, title}]
       setAllChats(data);
       if (!chatId && data.length > 0) {
         const lastChat = data[data.length - 1];
-        setChatId(lastChat.id);
-        setMessages(lastChat.messages);
+        const chatData = await api.get(`/chats/${lastChat.id}`); // {id, title, messages}
+        setChatId(chatData.data.id);
+        setMessages(chatData.data.messages);
       }
     } catch (err) {
       console.error("Error cargando chats:", err);
@@ -43,8 +46,8 @@ export default function IAForm() {
     loadAllChats();
   }, []);
 
-  // Crear nuevo chat
-  const createNewChat = async () => {
+  // Crear nuevo chat (resetea estado local)
+  const createNewChat = () => {
     setMessages([]);
     setChatId(null);
   };
@@ -75,26 +78,38 @@ export default function IAForm() {
     }
   };
 
-  // Reconocimiento de voz
+  // Reconocimiento de voz (Capacitor + Web Speech API)
   const startListening = async () => {
     try {
       if (Capacitor.isNativePlatform()) {
         const { permission } = await SpeechRecognition.requestPermission();
         if (permission !== "granted") return alert("No tienes permiso para usar el micrófono.");
         setListening(true);
-        const result = await SpeechRecognition.start({ language: "es-ES", maxResults: 1, prompt: "Habla ahora..." });
-        if (result.matches?.length > 0) setInput((prev) => prev + " " + result.matches[0]);
+        const result = await SpeechRecognition.start({
+          language: "es-ES",
+          maxResults: 1,
+          prompt: "Habla ahora...",
+        });
+        if (result.matches?.length > 0) setInput((prev) => `${prev} ${result.matches[0]}`.trim());
         setListening(false);
-      } else if ("webkitSpeechRecognition" in window) {
+      } else if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
         const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
         const recognition = new SR();
-        recognition.lang = "es-ES"; recognition.continuous = false; recognition.interimResults = false;
+        recognition.lang = "es-ES";
+        recognition.continuous = false;
+        recognition.interimResults = false;
         recognition.onstart = () => setListening(true);
         recognition.onend = () => setListening(false);
-        recognition.onresult = (event) => setInput((prev) => prev + " " + event.results[0][0].transcript);
+        recognition.onresult = (event) =>
+          setInput((prev) => `${prev} ${event.results[0][0].transcript}`.trim());
         recognition.start();
-      } else alert("Tu navegador no soporta reconocimiento de voz.");
-    } catch (err) { console.error("Error en reconocimiento de voz:", err); setListening(false); }
+      } else {
+        alert("Tu navegador no soporta reconocimiento de voz.");
+      }
+    } catch (err) {
+      console.error("Error en reconocimiento de voz:", err);
+      setListening(false);
+    }
   };
 
   // Enviar mensaje
@@ -102,7 +117,7 @@ export default function IAForm() {
     e.preventDefault();
     if (!input.trim()) return;
 
-    const userMessage = { role: "user", content: input };
+    const userMessage = { role: "user", content: input.trim() };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setLoading(true);
@@ -112,22 +127,34 @@ export default function IAForm() {
       const aiMessage = { role: "ai", content: data.response };
       setMessages((prev) => [...prev, aiMessage]);
       if (!chatId) setChatId(data.chatId);
-      loadAllChats(); // Actualizar sidebar
+      loadAllChats();
     } catch (err) {
-      setMessages((prev) => [...prev, { role: "ai", content: "❌ Error procesando tu solicitud." }]);
-    } finally { setLoading(false); }
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", content: "❌ Error procesando tu solicitud." },
+      ]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="main-container">
       {/* Sidebar */}
       <aside className="sidebar">
-        <button className="new-chat-btn" onClick={createNewChat}>➕ Nuevo Chat</button>
+        <button className="new-chat-btn" onClick={createNewChat}>
+          ➕ Nuevo Chat
+        </button>
         <div className="chat-list">
-          {allChats.map(chat => (
-            <div key={chat.id} className={`chat-item ${chat.id === chatId ? 'active' : ''}`}>
+          {allChats.map((chat) => (
+            <div
+              key={chat.id}
+              className={`chat-item ${chat.id === chatId ? "active" : ""}`}
+            >
               <span onClick={() => selectChat(chat.id)}>{chat.title}</span>
-              <button className="chat-options" onClick={() => deleteChat(chat.id)}>⋮</button>
+              <button className="chat-options" onClick={() => deleteChat(chat.id)}>
+                ⋮
+              </button>
             </div>
           ))}
         </div>
@@ -164,9 +191,12 @@ export default function IAForm() {
             </button>
           </form>
 
-          <div className="chat-footer">© 2025 Ramiro Atencio — Proyecto de IA Académica.</div>
+          <div className="chat-footer">
+            © 2025 Ramiro Atencio — Proyecto de IA Académica.
+          </div>
         </div>
       </section>
     </div>
   );
 }
+
