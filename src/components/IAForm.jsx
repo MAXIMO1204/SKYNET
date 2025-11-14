@@ -1,12 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import { Capacitor } from "@capacitor/core";
-import { SpeechRecognition } from "@capacitor-community/speech-recognition";
 import ReactMarkdown from "react-markdown";
 import Swal from "sweetalert2";
 import "./IAForm.css";
 
-// ✅ URL pública del backend en Railway
 const api = axios.create({
   baseURL: "https://skynet-production-6ead.up.railway.app/api",
   headers: { "Content-Type": "application/json" },
@@ -18,15 +15,13 @@ export default function IAForm() {
   const [allChats, setAllChats] = useState([]);
   const [chatId, setChatId] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [listening, setListening] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const chatEndRef = useRef(null);
 
-  // Scroll automático
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Cargar todos los chats
   const loadAllChats = async () => {
     try {
       const { data } = await api.get("/chats");
@@ -46,24 +41,22 @@ export default function IAForm() {
     loadAllChats();
   }, []);
 
-  // Crear nuevo chat
   const createNewChat = () => {
     setMessages([]);
     setChatId(null);
   };
 
-  // Seleccionar chat
   const selectChat = async (id) => {
     try {
       const { data } = await api.get(`/chats/${id}`);
       setChatId(data.id);
       setMessages(data.messages);
+      setMenuOpen(false);
     } catch (err) {
       console.error("No se pudo cargar el chat:", err);
     }
   };
 
-  // Eliminar chat
   const deleteChat = async (id) => {
     try {
       await api.delete(`/chats/${id}`);
@@ -78,41 +71,6 @@ export default function IAForm() {
     }
   };
 
-  // Reconocimiento de voz
-  const startListening = async () => {
-    try {
-      if (Capacitor.isNativePlatform()) {
-        const { permission } = await SpeechRecognition.requestPermission();
-        if (permission !== "granted") return alert("No tienes permiso para usar el micrófono.");
-        setListening(true);
-        const result = await SpeechRecognition.start({
-          language: "es-ES",
-          maxResults: 1,
-          prompt: "Habla ahora...",
-        });
-        if (result.matches?.length > 0) setInput((prev) => `${prev} ${result.matches[0]}`.trim());
-        setListening(false);
-      } else if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
-        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-        const recognition = new SR();
-        recognition.lang = "es-ES";
-        recognition.continuous = false;
-        recognition.interimResults = false;
-        recognition.onstart = () => setListening(true);
-        recognition.onend = () => setListening(false);
-        recognition.onresult = (event) =>
-          setInput((prev) => `${prev} ${event.results[0][0].transcript}`.trim());
-        recognition.start();
-      } else {
-        alert("Tu navegador no soporta reconocimiento de voz.");
-      }
-    } catch (err) {
-      console.error("Error en reconocimiento de voz:", err);
-      setListening(false);
-    }
-  };
-
-  // Enviar mensaje
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!input.trim()) return;
@@ -141,7 +99,10 @@ export default function IAForm() {
   return (
     <div className="main-container">
       {/* Sidebar */}
-      <aside className="sidebar">
+      <aside className={`sidebar ${menuOpen ? "open" : ""}`}>
+        <button className="hamburger" onClick={() => setMenuOpen(!menuOpen)}>
+          ☰
+        </button>
         <button className="new-chat-btn" onClick={createNewChat}>
           ➕ Nuevo Chat
         </button>
@@ -180,12 +141,9 @@ export default function IAForm() {
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Escribe o habla tu mensaje..."
+              placeholder="Escribe tu mensaje..."
               rows={2}
             />
-            <button type="button" onClick={startListening} className="mic-btn">
-              {listening ? "🎙️ Escuchando..." : "🎤 Hablar"}
-            </button>
             <button type="submit" disabled={loading}>
               {loading ? "⏳" : "Enviar"}
             </button>
