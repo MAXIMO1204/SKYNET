@@ -6,11 +6,12 @@ import ReactMarkdown from "react-markdown";
 import Swal from "sweetalert2";
 import "./IAForm.css";
 
-// URL pública del backend (Railway)
+// ✅ URL pública del backend en Railway (ajusta con tu dominio generado)
 const api = axios.create({
-  baseURL: "https://skynet-backend-production.up.railway.app/api",
+  baseURL: "https://skynet-production-6ead.up.railway.app/api",
   headers: { "Content-Type": "application/json" },
 });
+
 
 export default function IAForm() {
   const [input, setInput] = useState("");
@@ -21,19 +22,19 @@ export default function IAForm() {
   const [listening, setListening] = useState(false);
   const chatEndRef = useRef(null);
 
-  // Scroll automático al final del chat
+  // Scroll automático
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Cargar todos los chats (sidebar) y el último chat
+  // Cargar todos los chats
   const loadAllChats = async () => {
     try {
-      const { data } = await api.get("/chats"); // [{id, title}]
+      const { data } = await api.get("/chats");
       setAllChats(data);
       if (!chatId && data.length > 0) {
         const lastChat = data[data.length - 1];
-        const chatData = await api.get(`/chats/${lastChat.id}`); // {id, title, messages}
+        const chatData = await api.get(`/chats/${lastChat.id}`);
         setChatId(chatData.data.id);
         setMessages(chatData.data.messages);
       }
@@ -46,13 +47,13 @@ export default function IAForm() {
     loadAllChats();
   }, []);
 
-  // Crear nuevo chat (resetea estado local)
+  // Crear nuevo chat
   const createNewChat = () => {
     setMessages([]);
     setChatId(null);
   };
 
-  // Seleccionar chat del sidebar
+  // Seleccionar chat
   const selectChat = async (id) => {
     try {
       const { data } = await api.get(`/chats/${id}`);
@@ -78,7 +79,7 @@ export default function IAForm() {
     }
   };
 
-  // Reconocimiento de voz (Capacitor + Web Speech API)
+  // Reconocimiento de voz
   const startListening = async () => {
     try {
       if (Capacitor.isNativePlatform()) {
@@ -199,4 +200,5 @@ export default function IAForm() {
     </div>
   );
 }
+
 
