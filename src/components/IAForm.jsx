@@ -15,32 +15,32 @@ export default function IAForm() {
   const [allChats, setAllChats] = useState([]);
   const [chatId, setChatId] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const chatEndRef = useRef(null);
 
+  // Scroll automático
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Cargar todos los chats
   const loadAllChats = async () => {
-  try {
-    const { data } = await api.get("/chats");
-    setAllChats(data);
+    try {
+      const { data } = await api.get("/chats");
+      setAllChats(data);
 
-    if (!chatId && data.length > 0) {
-      const lastChat = data[data.length - 1];
-      const chatData = await api.get(`/chats/${lastChat.id}`);
-      setChatId(chatData.data.id);
-      setMessages(chatData.data.messages);
-    } else if (data.length === 0) {
-      setMessages([]); // Si no hay chats, mostrar vacío
-      setChatId(null);
+      if (data.length > 0 && !chatId) {
+        const lastChat = data[data.length - 1];
+        const chatData = await api.get(`/chats/${lastChat.id}`);
+        setChatId(chatData.data.id);
+        setMessages(chatData.data.messages);
+      } else if (data.length === 0) {
+        setMessages([]);
+        setChatId(null);
+      }
+    } catch (err) {
+      console.error("Error cargando chats:", err);
     }
-  } catch (err) {
-    console.error("Error cargando chats:", err);
-  }
-};
-
+  };
 
   useEffect(() => {
     loadAllChats();
@@ -56,7 +56,6 @@ export default function IAForm() {
       const { data } = await api.get(`/chats/${id}`);
       setChatId(data.id);
       setMessages(data.messages);
-      setMenuOpen(false);
     } catch (err) {
       console.error("No se pudo cargar el chat:", err);
     }
@@ -92,10 +91,7 @@ export default function IAForm() {
       if (!chatId) setChatId(data.chatId);
       loadAllChats();
     } catch (err) {
-      setMessages((prev) => [
-        ...prev,
-        { role: "ai", content: "❌ Error procesando tu solicitud." },
-      ]);
+      setMessages((prev) => [...prev, { role: "ai", content: "❌ Error procesando tu solicitud." }]);
     } finally {
       setLoading(false);
     }
@@ -103,30 +99,20 @@ export default function IAForm() {
 
   return (
     <div className="main-container">
-      {/* Sidebar */}
-      <aside className={`sidebar ${menuOpen ? "open" : ""}`}>
-        <button className="hamburger" onClick={() => setMenuOpen(!menuOpen)}>
-          ☰
-        </button>
+      <aside className="sidebar">
         <button className="new-chat-btn" onClick={createNewChat}>
           ➕ Nuevo Chat
         </button>
         <div className="chat-list">
           {allChats.map((chat) => (
-            <div
-              key={chat.id}
-              className={`chat-item ${chat.id === chatId ? "active" : ""}`}
-            >
+            <div key={chat.id} className={`chat-item ${chat.id === chatId ? "active" : ""}`}>
               <span onClick={() => selectChat(chat.id)}>{chat.title}</span>
-              <button className="chat-options" onClick={() => deleteChat(chat.id)}>
-                ⋮
-              </button>
+              <button className="chat-options" onClick={() => deleteChat(chat.id)}>⋮</button>
             </div>
           ))}
         </div>
       </aside>
 
-      {/* Chat */}
       <section className="chat-section">
         <div className="chat-container">
           <div className="chat-header">
