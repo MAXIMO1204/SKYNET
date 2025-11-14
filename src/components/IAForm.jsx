@@ -4,209 +4,262 @@ import ReactMarkdown from "react-markdown";
 import Swal from "sweetalert2";
 import "./IAForm.css";
 
-const IAForm = () => {
+const api = axios.create({
+  baseURL: "https://skynet-production-6ead.up.railway.app/api",
+  headers: { "Content-Type": "application/json" },
+});
+
+export default function IAForm() {
   const [input, setInput] = useState("");
-  const [response, setResponse] = useState("");
-  const [loading, setLoading] = useState(false);
-
+  const [messages, setMessages] = useState([]);
   const [allChats, setAllChats] = useState([]);
-  const [selectedChatId, setSelectedChatId] = useState(null);
+  const [chatId, setChatId] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [listening, setListening] = useState(false);
 
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const messagesEndRef = useRef(null);
-
-  // MICROFONO
+  const chatEndRef = useRef(null);
   const recognitionRef = useRef(null);
-  const [isRecording, setIsRecording] = useState(false);
 
+  // AUTOSCROLL
   useEffect(() => {
-    loadChats();
-  }, []);
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [response]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  // GENERAR TÍTULO AUTOMÁTICO
+  const generateTitle = (text) => {
+    let words = text.trim().split(" ");
+    let title = words.slice(0, 5).join(" ");
+    return title.charAt(0).toUpperCase() + title.slice(1);
   };
 
-  const loadChats = () => {
-    const stored = localStorage.getItem("skynet_chats");
-    if (stored) {
-      setAllChats(JSON.parse(stored));
-    } else {
+  // CARGAR CHATS
+  const loadAllChats = async () => {
+    try {
+      const { data } = await api.get("/chats");
+      const chatsArray = Array.isArray(data) ? data : [];
+      setAllChats(chatsArray);
+
+      if (chatsArray.length > 0 && !chatId) {
+        const lastChat = chatsArray[chatsArray.length - 1];
+        const chatData = await api.get(`/chats/${lastChat.id}`);
+        setChatId(chatData.data.id);
+        setMessages(chatData.data.messages || []);
+      }
+    } catch (err) {
+      console.error("Error cargando chats:", err);
+      setMessages([]);
+      setChatId(null);
       setAllChats([]);
     }
   };
 
-  const saveChats = (updated) => {
-    localStorage.setItem("skynet_chats", JSON.stringify(updated));
-    setAllChats(updated);
-  };
+  useEffect(() => {
+    loadAllChats();
+  }, []);
 
-  const startNewChat = () => {
-    const newChat = {
-      id: Date.now(),
-      messages: [],
-    };
-    saveChats([newChat, ...allChats]);
-    setSelectedChatId(newChat.id);
-    setResponse("");
+  // NUEVO CHAT
+  const createNewChat = () => {
+    setMessages([]);
+    setChatId(null);
     setInput("");
   };
 
-  const getSelectedChat = () => {
-    return allChats.find((c) => c.id === selectedChatId) || null;
+  // SELECCIONAR CHAT
+  const selectChat = async (id) => {
+    try {
+      const { data } = await api.get(`/chats/${id}`);
+      setChatId(data.id);
+      setMessages(data.messages || []);
+      setMenuOpen(false);
+    } catch (err) {
+      console.error("Error cargando chat:", err);
+    }
   };
 
-  const sendMessage = async () => {
-    if (!input.trim()) return;
-
-    setLoading(true);
-    const userMessage = input;
-
-    let updated = allChats.map((chat) => {
-      if (chat.id === selectedChatId) {
-        return {
-          ...chat,
-          messages: [...chat.messages, { from: "user", text: userMessage }],
-        };
-      }
-      return chat;
+  // ELIMINAR CHAT
+  const confirmDelete = async (id) => {
+    const menu = await Swal.fire({
+      title: "Opciones",
+      showCancelButton: true,
+      confirmButtonText: "Eliminar Chat",
+      cancelButtonText: "Cancelar",
+      icon: "info",
     });
 
-    saveChats(updated);
-    setInput("");
+    if (!menu.isConfirmed) return;
 
-    try {
-      const res = await fetch("http://localhost:4000/ia", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: userMessage }),
-      });
-
-      const data = await res.json();
-      const botMessage = data.response || "Error al procesar.";
-
-      updated = updated.map((chat) => {
-        if (chat.id === selectedChatId) {
-          return {
-            ...chat,
-            messages: [...chat.messages, { from: "bot", text: botMessage }],
-          };
-        }
-        return chat;
-      });
-
-      saveChats(updated);
-      setResponse(botMessage);
-    } catch (error) {
-      console.log(error);
-    }
-
-    setLoading(false);
-  };
-
-  // ⚠ MENÚ DE LOS 3 PUNTITOS — CONFIRMACIÓN SWEETALERT
-  const handleDeleteChat = (chatId) => {
-    Swal.fire({
-      title: "¿Eliminar chat?",
-      text: "Esta acción no se puede deshacer",
+    const result = await Swal.fire({
+      title: "¿Estás seguro?",
+      text: "Esto no se puede deshacer",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#E2725B",
-      cancelButtonColor: "#0F4CFF",
-      confirmButtonText: "Eliminar",
-    }).then((result) => {
-      if (result.isConfirmed) {
-        const filtered = allChats.filter((c) => c.id !== chatId);
-        saveChats(filtered);
-        setSelectedChatId(null);
-        Swal.fire("Eliminado", "El chat ha sido eliminado", "success");
-      }
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
     });
+
+    if (result.isConfirmed) {
+      try {
+        await api.delete(`/chats/${id}`);
+        Swal.fire("Eliminado", "Chat eliminado correctamente", "success");
+
+        if (id === chatId) {
+          setMessages([]);
+          setChatId(null);
+        }
+
+        loadAllChats();
+      } catch (err) {
+        Swal.fire("Error", "No se pudo eliminar el chat", "error");
+      }
+    }
   };
 
-  // 🔊 MICROFONO
-  const toggleRecord = () => {
+  // ENVIAR MENSAJE
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!input.trim()) return;
+
+    const userMessage = { role: "user", content: input.trim() };
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
+    setLoading(true);
+
+    try {
+      const { data } = await api.post("/chat", {
+        message: userMessage.content,
+        chatId,
+      });
+
+      const aiMessage = { role: "ai", content: data.response };
+      setMessages((prev) => [...prev, aiMessage]);
+
+      // SI ES UN CHAT NUEVO → LE PONEMOS TÍTULO
+      if (!chatId) {
+        const newTitle = generateTitle(userMessage.content);
+        await api.put(`/chats/${data.chatId}`, { title: newTitle });
+      }
+
+      if (!chatId) setChatId(data.chatId);
+
+      loadAllChats();
+    } catch (err) {
+      setMessages((prev) => [
+        ...prev,
+        { role: "ai", content: "❌ Error procesando tu solicitud." },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // MICROFONO
+  const startListening = () => {
     if (!("webkitSpeechRecognition" in window)) {
-      alert("Tu navegador no soporta reconocimiento de voz");
+      alert("Tu navegador no soporta reconocimiento de voz.");
       return;
     }
 
-    if (!recognitionRef.current) {
-      recognitionRef.current = new window.webkitSpeechRecognition();
-      recognitionRef.current.lang = "es-ES";
-      recognitionRef.current.continuous = false;
+    const recognition = new webkitSpeechRecognition();
+    recognitionRef.current = recognition;
 
-      recognitionRef.current.onresult = (event) => {
-        const text = event.results[0][0].transcript;
-        setInput((prev) => prev + " " + text);
-      };
-    }
+    recognition.lang = "es-AR";
+    recognition.continuous = false;
+    recognition.interimResults = false;
 
-    if (!isRecording) {
-      recognitionRef.current.start();
-      setIsRecording(true);
-    } else {
-      recognitionRef.current.stop();
-      setIsRecording(false);
-    }
+    recognition.onstart = () => setListening(true);
+    recognition.onerror = () => setListening(false);
+    recognition.onend = () => setListening(false);
+
+    recognition.onresult = (event) => {
+      const text = event.results[0][0].transcript;
+      setInput((prev) => prev + " " + text);
+    };
+
+    recognition.start();
   };
 
-  const selectedChat = getSelectedChat();
+  const stopListening = () => {
+    recognitionRef.current?.stop();
+    setListening(false);
+  };
 
+  // TEMPLATE
   return (
-    <div className="app-container">
-  <button className="hamburger" onClick={() => setSidebarOpen(!sidebarOpen)}>☰</button>
+    <div className="main-container">
 
-  {/* SIDEBAR */}
-  <div className={`sidebar ${sidebarOpen ? "open" : ""}`}>
-    <h1 className="logo">Skynet AI</h1>
-    <button className="new-chat-btn" onClick={startNewChat}>+ Nuevo Chat</button>
-    <h3 className="history-title">Historial</h3>
-    {allChats.map((chat) => {
-      const firstMsg = chat.messages.length > 0 ? chat.messages[0].text.slice(0, 25) : "Chat vacío";
-      return (
-        <div key={chat.id} className="chat-item">
-          <span onClick={() => setSelectedChatId(chat.id)}>{firstMsg}</span>
-          <button className="dots-menu" onClick={() => handleDeleteChat(chat.id)}>⋮</button>
+      {/* Overlay para cerrar menú en mobile */}
+      {menuOpen && <div className="menu-overlay" onClick={() => setMenuOpen(false)} />}
+
+      <button className="hamburger" onClick={() => setMenuOpen(!menuOpen)}>
+        ☰
+      </button>
+
+      <aside className={`sidebar ${menuOpen ? "open" : ""}`}>
+        <button className="new-chat-btn" onClick={createNewChat}>
+          ➕ Nuevo Chat
+        </button>
+
+        <div className="chat-list">
+          {allChats.map((chat) => (
+            <div
+              key={chat.id}
+              className={`chat-item ${chat.id === chatId ? "active" : ""}`}
+            >
+              <span onClick={() => selectChat(chat.id)}>
+                {chat.title || "Chat sin título"}
+              </span>
+
+              <button className="chat-options" onClick={() => confirmDelete(chat.id)}>
+                ⋮
+              </button>
+            </div>
+          ))}
         </div>
-      );
-    })}
-  </div>
+      </aside>
 
-  {/* CHAT AREA */}
-  <div className="chat-area">
-    <div className="chat-header">
-      <h2>{selectedChat ? "Chat activo" : "Selecciona un chat"}</h2>
-    </div>
-
-    <div className="messages">
-      {selectedChat &&
-        selectedChat.messages.map((m, idx) => (
-          <div key={idx} className={`msg ${m.from}`}>
-            <ReactMarkdown>{m.text}</ReactMarkdown>
+      <section className="chat-section">
+        <div className="chat-container">
+          <div className="chat-header">
+            <h2>Skynet AI</h2>
           </div>
-        ))}
-      <div ref={messagesEndRef} />
-    </div>
 
-    <div className="input-area">
-      <input
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        placeholder="Escribe tu mensaje..."
-      />
-      <button className={`mic-btn ${isRecording ? "recording" : ""}`} onClick={toggleRecord}>🎤</button>
-      <button onClick={sendMessage} disabled={loading}>{loading ? "..." : "Enviar"}</button>
+          <div className="chat-body">
+            {messages.map((msg, i) => (
+              <div key={i} className={`chat-message ${msg.role}`}>
+                <ReactMarkdown>{msg.content}</ReactMarkdown>
+              </div>
+            ))}
+            <div ref={chatEndRef} />
+          </div>
+
+          <form className="chat-input" onSubmit={handleSubmit}>
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Escribe tu mensaje..."
+              rows={2}
+            />
+
+            <button
+              type="button"
+              className={`mic-btn ${listening ? "recording" : ""}`}
+              onClick={listening ? stopListening : startListening}
+            >
+              {listening ? "🔴" : "🎤"}
+            </button>
+
+            <button type="submit" disabled={loading}>
+              {loading ? "⏳" : "Enviar"}
+            </button>
+          </form>
+
+          <div className="chat-footer">
+            © 2025 Ramiro Atencio — Proyecto IA Académica
+          </div>
+        </div>
+      </section>
     </div>
-  </div>
-</div>
   );
-};
-
-export default IAForm;
-
+}
 
