@@ -171,27 +171,33 @@ export default function IAForm() {
       </button>
 
       <aside className={`sidebar ${menuOpen ? "open" : ""}`}>
-        <button className="new-chat-btn" onClick={createNewChat}>
-          ➕ Nuevo Chat
-        </button>
+  <div className="sidebar-content">
+    <button className="new-chat-btn" onClick={createNewChat}>
+      ➕ Nuevo Chat
+    </button>
 
-        <div className="chat-list">
-          {allChats.map((chat) => (
-            <div
-              key={chat.id}
-              className={`chat-item ${chat.id === chatId ? "active" : ""}`}
-            >
-              <span onClick={() => selectChat(chat.id)}>
-                {chat.title || "Chat sin título"}
-              </span>
+    <div className="chat-list">
+      {allChats.map((chat) => (
+        <div
+          key={chat.id}
+          className={`chat-item ${chat.id === chatId ? "active" : ""}`}
+        >
+          <span onClick={() => selectChat(chat.id)}>
+            {chat.title || "Chat sin título"}
+          </span>
 
-              <button className="chat-options" onClick={() => confirmDelete(chat.id)}>
-                ⋮
-              </button>
-            </div>
-          ))}
+          <button
+            className="chat-options"
+            onClick={() => confirmDelete(chat.id)}
+          >
+            ⋮
+          </button>
         </div>
-      </aside>
+      ))}
+    </div>
+  </div>
+</aside>
+
 
       <section className="chat-section">
         <div className="chat-container">

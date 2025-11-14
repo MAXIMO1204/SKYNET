@@ -1,134 +1,289 @@
-/* -----------------------
-   ESTILOS GENERALES
------------------------- */
-body {
+/* ====== RESET ====== */
+* {
   margin: 0;
-  font-family: Arial, sans-serif;
-  background: #f4f4f4;
-  overflow-x: hidden;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-/* TÍTULO CENTRAL */
-.titulo {
-  text-align: center;
-  font-size: 38px;
-  margin-top: 25px;
-  font-weight: bold;
-  color: #222;
-  position: relative;
-  z-index: 5;
+body, html {
+  height: 100%;
+  font-family: "Inter", "Segoe UI", sans-serif;
+  background: #0d0d0d;
+  color: #f5f5f5;
 }
 
-/* -----------------------
-   SIDEBAR ESCRITORIO
------------------------- */
+/* ====== MAIN CONTAINER ====== */
+.main-container {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ====== SIDEBAR ====== */
 .sidebar {
   width: 260px;
-  background: #001f33;
-  height: 100vh;
-  position: fixed;
-  top: 0;
-  left: 0;
-  padding-top: 30px;
-  transition: transform 0.35s ease;
-  z-index: 1200;
+  height: 100%;
+  background: rgba(20, 20, 20, 0.95);
+  backdrop-filter: blur(10px);
+  border-right: 1px solid #222;
+  transition: left 0.3s ease;
+  z-index: 100;
 }
 
-.logo {
-  color: #00ffcc;
-  text-align: center;
-  margin-bottom: 25px;
+.sidebar-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  height: 100%;
+  padding: 1rem;
 }
 
-.sidebar ul {
-  list-style: none;
-  padding: 0;
+.new-chat-btn {
+  background: linear-gradient(135deg, #1f1f1f, #333);
+  color: #00e0ff;
+  border: none;
+  padding: 0.7rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  margin-bottom: 1rem;
 }
 
-.sidebar li {
-  padding: 15px 25px;
+.new-chat-btn:hover {
+  background: #00e0ff;
+  color: #0d0d0d;
 }
 
-.sidebar a {
-  text-decoration: none;
-  color: #fff;
-  font-size: 18px;
-  display: block;
-  transition: 0.2s;
+.chat-list {
+  flex: 1;
+  overflow-y: auto;
 }
 
-.sidebar a:hover {
-  background: #00ffcc;
-  color: #000;
+.chat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem;
   border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s ease;
 }
 
-/* -----------------------
-   CONTENIDO
------------------------- */
-.content {
-  margin-left: 260px;
-  padding: 20px;
-  transition: margin-left 0.35s ease;
+.chat-item:hover {
+  background: rgba(255, 255, 255, 0.05);
 }
 
-.content-shift {
-  margin-left: 260px;
+.chat-item.active {
+  background: rgba(0, 224, 255, 0.15);
+  border-left: 3px solid #00e0ff;
 }
 
-/* -----------------------------
-   RESPONSIVE (MOBILE / TABLET)
------------------------------- */
-@media (max-width: 900px) {
+.chat-options {
+  background: none;
+  border: none;
+  color: #aaa;
+  cursor: pointer;
+  font-size: 1.2rem;
+}
 
-  /* Sidebar oculto */
+.chat-options:hover {
+  color: #ff4d4d;
+}
+
+/* ====== HAMBURGER ====== */
+.hamburger {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  background: none;
+  border: none;
+  font-size: 1.8rem;
+  color: #00e0ff;
+  cursor: pointer;
+  z-index: 200;
+  display: none; /* 🔹 Oculto en escritorio */
+}
+
+/* ====== CHAT SECTION ====== */
+.chat-section {
+  flex: 1;
+  margin-left: 260px; /* 🔹 Reserva espacio para sidebar en escritorio */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+}
+
+.chat-container {
+  width: 100%;
+  max-width: 900px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: rgba(25, 25, 25, 0.9);
+  border-radius: 12px;
+  border: 1px solid #222;
+  overflow: hidden;
+}
+
+/* ====== CHAT HEADER ====== */
+.chat-header {
+  padding: 1rem;
+  background: #111;
+  border-bottom: 1px solid #222;
+  text-align: center;
+}
+
+.chat-header h2 {
+  color: #00e0ff;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+/* ====== CHAT BODY ====== */
+.chat-body {
+  flex: 1;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.chat-message {
+  margin-bottom: 1rem;
+  padding: 0.8rem 1rem;
+  border-radius: 10px;
+  max-width: 80%;
+  line-height: 1.4;
+  animation: fadeIn 0.3s ease;
+}
+
+.chat-message.user {
+  background: linear-gradient(135deg, #00e0ff, #0077ff);
+  color: #0d0d0d;
+  align-self: flex-end;
+}
+
+.chat-message.ai {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid #333;
+  color: #f5f5f5;
+  align-self: flex-start;
+}
+
+/* ====== CHAT INPUT ====== */
+.chat-input {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  background: #111;
+  border-top: 1px solid #222;
+}
+
+.chat-input textarea {
+  flex: 1;
+  resize: none;
+  border: none;
+  border-radius: 8px;
+  padding: 0.7rem;
+  font-size: 1rem;
+  background: #1a1a1a;
+  color: #f5f5f5;
+  outline: none;
+}
+
+.chat-input textarea::placeholder {
+  color: #888;
+}
+
+.chat-input button {
+  margin-left: 0.5rem;
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.chat-input button[type="submit"] {
+  background: #00e0ff;
+  color: #0d0d0d;
+}
+
+.chat-input button[type="submit"]:disabled {
+  background: #555;
+  color: #aaa;
+  cursor: not-allowed;
+}
+
+.chat-input button[type="submit"]:hover:not(:disabled) {
+  background: #0077ff;
+  color: #fff;
+}
+
+/* ====== MIC BUTTON ====== */
+.mic-btn {
+  background: #333;
+  color: #00e0ff;
+}
+
+.mic-btn.recording {
+  background: #ff4d4d;
+  color: #fff;
+  animation: pulse 1s infinite;
+}
+
+/* ====== FOOTER ====== */
+.chat-footer {
+  text-align: center;
+  padding: 0.5rem;
+  font-size: 0.8rem;
+  background: #111;
+  border-top: 1px solid #222;
+  color: #888;
+}
+
+/* ====== ANIMATIONS ====== */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.7; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ====== RESPONSIVE ====== */
+@media (max-width: 768px) {
   .sidebar {
-    transform: translateX(-100%);
+    position: fixed;
+    top: 0;
+    left: -260px; /* 🔹 Oculto en móviles */
+    height: 100%;
   }
 
-  /* Sidebar abierto */
   .sidebar.open {
-    transform: translateX(0);
+    left: 0; /* 🔹 Slide-in al abrir */
+    animation: slideIn 0.3s ease forwards;
   }
 
-  /* Hamburguesa */
+  /* 🔹 Bajamos el contenido para que no se superponga con el hamburger */
+  .sidebar-content {
+    padding-top: 6rem;
+  }
+
   .hamburger {
-    display: block;
-    position: fixed;
-    top: 15px;
-    left: 15px;
-    font-size: 26px;
-    z-index: 1400;
-    background: #00ffcc;
-    color: #000;
-    padding: 8px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    border: none;
+    display: block; /* 🔹 Visible en móviles */
   }
 
-  /* Fondo oscuro */
-  .menu-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.6);
-    z-index: 1300;
+  .chat-section {
+    margin-left: 0; /* 🔹 No reserva espacio en móviles */
   }
+}
 
-  /* Título centrado SIEMPRE delante */
-  .titulo {
-    margin-top: 75px;
-    font-size: 32px;
-    z-index: 1500;
-  }
-
-  /* El contenido se empuja suavemente cuando el menú está abierto */
-  .content {
-    margin-left: 0;
-    transition: transform 0.35s ease;
-  }
-
-  .content-shift {
-    transform: translateX(230px);
-  }
+@keyframes slideIn {
+  from { left: -260px; }
+  to { left: 0; }
 }
