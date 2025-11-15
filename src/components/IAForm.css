@@ -1,4 +1,4 @@
-/* ====== RESET ====== */
+/* ====== GLOBAL STYLES ====== */
 * {
   margin: 0;
   padding: 0;
@@ -287,3 +287,8 @@ body, html {
   from { left: -260px; }
   to { left: 0; }
 }
+
+
+
+
+

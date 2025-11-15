@@ -117,6 +117,9 @@ const client = new OpenAI({
   apiKey: process.env.HF_TOKEN || process.env.OPENAI_API_KEY,
 });
 
+/* ============================================================
+   POST /api/chat ➜ Solo devuelve respuesta IA
+============================================================ */
 app.post("/api/chat", async (req, res) => {
   try {
     const { message } = req.body;
