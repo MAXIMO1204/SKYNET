@@ -2,9 +2,33 @@
   "appId": "com.ramiro.skynet",
   "appName": "Skynet AI Chat",
   "webDir": "dist",
-  "bundledWebRuntime": false
+  "bundledWebRuntime": false,
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 3000,
+      "launchAutoHide": true,
+      "backgroundColor": "#000000",
+      "androidScaleType": "CENTER_CROP",
+      "showSpinner": false
+    }
+  },
+  "cordova": {
+    "preferences": {
+      "SplashMaintainAspectRatio": "true",
+      "SplashScreenBackgroundColor": "#000000",
+      "SplashScreenDelay": "3000",
+      "FadeSplashScreenDuration": "500",
+      "SplashShowOnlyFirstTime": "false",
+      "SplashScreen": "screen",
+      "AndroidWindowSplashScreenAnimatedIcon": "resources/icon.png",
+      "AndroidWindowSplashScreenBackground": "#000000"
+    }
+  },
+  "android": {
+    "adaptiveIconForeground": "resources/icon.png",
+    "adaptiveIconBackground": "#000000"
+  }
 }
-
 
 
 
