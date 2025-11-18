@@ -271,36 +271,43 @@ body, html {
     margin-left: 0;
   }
 
-  /* 🔹 Solución PRO: espacio seguro para evitar superposición */
+  /* 🔹 Header adaptado para móvil */
   .chat-header {
-    padding-top: 4.2rem; /* Espacio para hamburguesa + notch */
+    padding-top: 4.2rem; /* Espacio para la hamburguesa */
+  }
+
+  /* 🔹 FIX: Tu JSX usa h1 (no h2). Ajustamos tamaño y color. */
+  .chat-header h1 {
+    color: #00e0ff;
+    font-weight: 700;
+    letter-spacing: 1px;
+    font-size: clamp(1.1rem, 4vw, 1.6rem);
+    word-break: break-word;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* 🔹 Chat container ocupa todo el ancho */
+  .chat-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 0;
+  }
+
+  /* 🔹 Ajuste de espacio para que no se achique el chat */
+  .chat-body {
+    padding: 1rem !important;
+  }
+
+  /* 🔹 Mensajes más amplios como en PC */
+  .chat-message {
+    max-width: 95% !important;
   }
 }
 
 @keyframes slideIn {
   from { left: -260px; }
   to { left: 0; }
-}
-
-/* ==== FIX DEFINITIVO PARA QUE EL CELU SE VEA IGUAL QUE PC ==== */
-@media (max-width: 768px) {
-
-  /* Hacer que el chat ocupe todo el ancho */
-  .chat-container {
-    width: 100% !important;
-    max-width: 100% !important;
-    border-radius: 0; /* opcional, si no querés bordes en móvil */
-  }
-
-  /* Ajustar el espacio interno del body del chat */
-  .chat-body {
-    padding: 1rem !important;
-  }
-
-  /* Hacer que los mensajes no se achiquen */
-  .chat-message {
-    max-width: 95% !important;
-  }
 }
 
 
