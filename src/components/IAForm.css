@@ -272,19 +272,17 @@ body, html {
   }
 
   /* 🔹 Header adaptado para móvil */
-  .chat-header {
-    padding-top: 4.2rem; /* Espacio para la hamburguesa */
+   .chat-header {
+    padding-top: 4rem !important;  /* Aumentamos para que el h1 quede abajo del menú */
   }
 
-  /* 🔹 FIX: Tu JSX usa h1 (no h2). Ajustamos tamaño y color. */
   .chat-header h1 {
-    color: #00e0ff;
-    font-weight: 700;
-    letter-spacing: 1px;
-    font-size: clamp(1.1rem, 4vw, 1.6rem);
-    word-break: break-word;
+    display: block;
+    width: 100%;
+    text-align: center;
     margin: 0;
-    padding: 0;
+    padding: 0.2rem 0;
+    font-size: clamp(1.1rem, 4vw, 1.6rem);
   }
 
   /* 🔹 Chat container ocupa todo el ancho */
