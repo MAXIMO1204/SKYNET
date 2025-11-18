@@ -287,6 +287,17 @@ body, html {
   from { left: -260px; }
   to { left: 0; }
 }
+@media (max-width: 768px) {
+  .chat-header {
+    padding-top: 3.5rem; /* baja el título para que no toque el botón */
+  }
+
+  .hamburger {
+    top: 0.8rem;
+    left: 0.8rem;
+  }
+}
+
 
 
 
