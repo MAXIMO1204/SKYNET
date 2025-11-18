@@ -181,7 +181,7 @@ export default function IAForm() {
       <section className="chat-section">
         <div className="chat-container">
           <div className="chat-header">
-            <h2>Skynet AI — {username}</h2>
+            <h3>Skynet AI — {username}</h3>
           </div>
 
           <div className="chat-body">
