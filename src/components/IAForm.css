@@ -282,6 +282,28 @@ body, html {
   to { left: 0; }
 }
 
+/* ==== FIX DEFINITIVO PARA QUE EL CELU SE VEA IGUAL QUE PC ==== */
+@media (max-width: 768px) {
+
+  /* Hacer que el chat ocupe todo el ancho */
+  .chat-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 0; /* opcional, si no querés bordes en móvil */
+  }
+
+  /* Ajustar el espacio interno del body del chat */
+  .chat-body {
+    padding: 1rem !important;
+  }
+
+  /* Hacer que los mensajes no se achiquen */
+  .chat-message {
+    max-width: 95% !important;
+  }
+}
+
+
 
 
 
