@@ -17,14 +17,13 @@ export default function IAForm() {
   const [loading, setLoading] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [username, setUsername] = useState("");
-
   const chatEndRef = useRef(null);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // 🔹 Al entrar, pedir nombre y cargar chats locales
+  //  Al entrar, pedir nombre y cargar chats locales
   useEffect(() => {
     let storedUser = localStorage.getItem("username");
     if (!storedUser) {
@@ -207,7 +206,7 @@ export default function IAForm() {
           </form>
 
           <div className="chat-footer">
-            © 2025 Ramiro Atencio — Proyecto IA Académica
+            © 2025 Ramiro Atencio — Desarrollo de Software
           </div>
         </div>
       </section>
